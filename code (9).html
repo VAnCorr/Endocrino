@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rúbrica Profesional (con PDF Mejorado)</title>
+    
+    <!-- Bibliotecas para generar PDF en el navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        /* --- ESTILOS PARA LA PANTALLA (SCREEN) --- */
+        :root {
+            --color-primary: #06b6d4; --color-primary-dark: #0891b2; --color-primary-light: #ecfeff;
+            --color-gray-100: #f3f4f6; --color-gray-300: #d1d5db; --color-gray-500: #6b7280;
+            --color-gray-600: #4b5563; --color-gray-700: #374151; --color-gray-800: #1f2937;
+            --color-gray-900: #11182c; --color-green-600: #16a34a; --color-green-700: #15803d;
+            --color-red-600: #dc2626; --color-blue-600: #2563eb;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--color-gray-100); padding: 2rem; margin: 0; color: var(--color-gray-800); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        * { box-sizing: border-box; }
+        .container { max-width: 56rem; margin-left: auto; margin-right: auto; }
+        header { background-color: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); margin-bottom: 2rem; border-left: 4px solid var(--color-primary-dark); }
+        header h1 { font-size: 1.875rem; font-weight: bold; color: var(--color-gray-800); }
+        header p { font-size: 1.25rem; color: var(--color-gray-600); margin-top: 0.25rem; }
+        .header-grid { margin-top: 1.5rem; display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        @media (min-width: 768px) { .header-grid { grid-template-columns: repeat(2, 1fr); } }
+        .header-grid label { font-weight: 600; color: var(--color-gray-700); font-size: 0.875rem; }
+        .header-grid p { font-size: 1rem; color: var(--color-gray-900); background-color: var(--color-gray-100); padding: 0.5rem; border-radius: 0.375rem; }
+        input[type="text"], input[type="date"], textarea { width: 100%; margin-top: 0.25rem; padding: 0.5rem; border: 1px solid var(--color-gray-300); border-radius: 0.375rem; transition: border-color 0.2s, box-shadow 0.2s; }
+        input[type="text"]:focus, input[type="date"]:focus, textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3); }
+        .main-content { display: flex; flex-direction: column; gap: 2rem; }
+        @media (min-width: 1024px) { .main-content { flex-direction: row; } .criteria-column { width: 66.66%; } .results-column { width: 33.33%; } }
+        .criteria-column { display: flex; flex-direction: column; gap: 1rem; }
+        .criterion-card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 1.25rem; }
+        .criterion-card h3 { font-weight: bold; font-size: 1.125rem; color: var(--color-gray-800); margin: 0 0 0.75rem 0; }
+        .criterion-card p { font-size: 0.875rem; color: var(--color-gray-500); margin: 0; }
+        .rating-group { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; text-align: center; font-size: 0.875rem; font-weight: 600; }
+        .rating-group input { display: none; }
+        .rating-group label { cursor: pointer; transition: all 0.2s; border: 2px solid var(--color-gray-300); padding: 8px; border-radius: 8px; }
+        .rating-group label:hover { border-color: var(--color-primary); background-color: var(--color-primary-light); }
+        .rating-group input:checked + label { background-color: var(--color-primary); color: white; border-color: var(--color-primary-dark); transform: scale(1.05); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .results-column { align-self: flex-start; }
+        @media (min-width: 1024px) { .results-column { position: sticky; top: 2rem; } }
+        .results-panel { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 1.5rem; }
+        .results-panel h2 { font-size: 1.5rem; font-weight: bold; color: var(--color-gray-900); margin-bottom: 1rem; text-align: center; }
+        .score-display { text-align: center; background-color: var(--color-primary-dark); color: white; padding: 1.5rem 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; }
+        .score-display .score-label { font-size: 1.25rem; font-weight: 600; display: block; }
+        .score-display .score-value { font-size: 3.75rem; font-weight: bold; }
+        .score-display .score-max { font-size: 1.5rem; font-weight: 600; }
+        .feedback-section > div { margin-bottom: 1rem; }
+        .feedback-section label { font-size: 1.125rem; font-weight: 600; color: var(--color-gray-800); }
+        .actions-section { display: flex; flex-direction: column; gap: 0.75rem; }
+        .button { width: 100%; color: white; font-weight: bold; padding: 0.75rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; transition: background-color 0.3s; display: flex; align-items: center; justify-content: center; }
+        .button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        .button svg { height: 1.25rem; width: 1.25rem; margin-right: 0.5rem; }
+        #submit-button { background-color: var(--color-green-600); }
+        #submit-button:hover { background-color: var(--color-green-700); }
+        #generate-pdf-button { background-color: var(--color-blue-600); }
+        #generate-pdf-button:hover { background-color: #1d4ed8; }
+        #status-message { text-align: center; margin-top: 1rem; font-weight: 500; }
+        #status-message.success { color: var(--color-green-600); }
+        #status-message.error { color: var(--color-red-600); }
+        #status-message.info { color: var(--color-blue-600); }
+        #status-message a { font-weight: bold; text-decoration: underline; }
+
+        /* --- NUEVO: ESTILOS PARA IMPRESIÓN / PDF --- */
+        @media print {
+            body {
+                padding: 0;
+                background-color: white;
+                color: black;
+                font-size: 12pt; /* Tamaño de fuente base para impresión */
+            }
+
+            /* Define los márgenes de la página del PDF */
+            @page {
+                margin: 1.5cm;
+            }
+
+            /* Ocultar elementos no deseados en el PDF */
+            #action-buttons-container, #status-message {
+                display: none !important;
+            }
+
+            /* Asegurar que el contenido del PDF ocupe todo el ancho */
+            .container, .criteria-column, .results-column {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            
+            /* Forzar layout de una columna y eliminar estilos de pantalla */
+            .main-content {
+                flex-direction: column !important;
+                gap: 1rem !important;
+            }
+            
+            .results-column {
+                position: static !important;
+                padding-top: 1rem;
+            }
+
+            /* Simplificar la apariencia de las tarjetas y cabecera */
+            header, .criterion-card, .results-panel {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                border: 1px solid #ccc;
+                padding: 1rem;
+            }
+            header {
+                border-left: none !important;
+            }
+
+            /* Evitar que una tarjeta se divida entre dos páginas */
+            .criterion-card, .results-panel {
+                break-inside: avoid;
+            }
+
+            /* Estilos de los inputs para impresión */
+            input, textarea {
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+            }
+            textarea {
+                background-color: #f9f9f9;
+            }
+
+            /* Estilo simplificado para el grupo de calificación */
+            .rating-group label {
+                border-color: #ccc !important;
+                background-color: white !important;
+                color: #555 !important;
+                transform: none !important;
+                box-shadow: none !important;
+            }
+            .rating-group input:checked + label {
+                background-color: #333 !important;
+                color: white !important;
+                border-color: black !important;
+            }
+            
+            /* Estilo simplificado para el panel de puntuación */
+            .score-display {
+                background-color: #eee !important;
+                color: black !important;
+                border: 1px solid #ccc;
+                padding: 1rem !important;
+            }
+            .score-display .score-value {
+                font-size: 2.5rem !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- El envoltorio sigue siendo crucial para que html2canvas sepa qué capturar -->
+    <div id="pdf-content">
+        <div class="container">
+            <header>
+                <!-- Contenido del header sin cambios -->
+                 <h1>Rúbrica de Evaluación Profesional</h1>
+                <p>Módulo de Emergencias Endocrinas</p>
+                <div class="header-grid">
+                     <div><label>Ponente:</label><p>Dr. López</p></div>
+                     <div><label for="evaluador">Evaluador:</label><input type="text" id="evaluador"></div>
+                     <div><label for="tema">Tema de la Clase:</label><input type="text" id="tema"></div>
+                     <div><label for="fecha">Fecha:</label><input type="date" id="fecha"></div>
+                </div>
+            </header>
+            <div class="main-content">
+                <div class="criteria-column">
+                    <!-- Todas las tarjetas de criterios sin cambios -->
+                    <div class="criterion-card" data-points="15" id="crit-1"><div><h3 >1. Dominio del Contenido y Base Científica</h3><p>Demuestra conocimiento profundo y actualizado con evidencia científica.</p></div><div class="rating-group"><input type="radio" name="c1" value="0" id="c1-0"><label for="c1-0">N/C</label><input type="radio" name="c1" value="0.25" id="c1-1"><label for="c1-1">Mejorar</label><input type="radio" name="c1" value="0.5" id="c1-2"><label for="c1-2">Satisf.</label><input type="radio" name="c1" value="0.8" id="c1-3"><label for="c1-3">Bueno</label><input type="radio" name="c1" value="1.0" id="c1-4"><label for="c1-4">Excelente</label></div></div>
+                    <div class="criterion-card" data-points="10" id="crit-2"><div><h3>2. Estructura y Claridad Lógica</h3><p>La presentación es organizada, coherente y fácil de seguir.</p></div><div class="rating-group"><input type="radio" name="c2" value="0" id="c2-0"><label for="c2-0">N/C</label><input type="radio" name="c2" value="0.25" id="c2-1"><label for="c2-1">Mejorar</label><input type="radio" name="c2" value="0.5" id="c2-2"><label for="c2-2">Satisf.</label><input type="radio" name="c2" value="0.8" id="c2-3"><label for="c2-3">Bueno</label><input type="radio" name="c2" value="1.0" id="c2-4"><label for="c2-4">Excelente</label></div></div>
+                    <div class="criterion-card" data-points="15" id="crit-3"><div><h3>3. Relevancia y Aplicabilidad Clínica</h3><p>Conecta la teoría con la práctica diaria en la UCI de forma útil.</p></div><div class="rating-group"><input type="radio" name="c3" value="0" id="c3-0"><label for="c3-0">N/C</label><input type="radio" name="c3" value="0.25" id="c3-1"><label for="c3-1">Mejorar</label><input type="radio" name="c3" value="0.5" id="c3-2"><label for="c3-2">Satisf.</label><input type="radio" name="c3" value="0.8" id="c3-3"><label for="c3-3">Bueno</label><input type="radio" name="c3" value="1.0" id="c3-4"><label for="c3-4">Excelente</label></div></div>
+                    <div class="criterion-card" data-points="10" id="crit-4"><div><h3>4. Habilidad de Comunicación</h3><p>Se expresa con claridad, fluidez y mantiene el interés.</p></div><div class="rating-group"><input type="radio" name="c4" value="0" id="c4-0"><label for="c4-0">N/C</label><input type="radio" name="c4" value="0.25" id="c4-1"><label for="c4-1">Mejorar</label><input type="radio" name="c4" value="0.5" id="c4-2"><label for="c4-2">Satisf.</label><input type="radio" name="c4" value="0.8" id="c4-3"><label for="c4-3">Bueno</label><input type="radio" name="c4" value="1.0" id="c4-4"><label for="c4-4">Excelente</label></div></div>
+                    <div class="criterion-card" data-points="5" id="crit-5"><div><h3>5. Calidad de Recursos Didácticos</h3><p>Las diapositivas son claras, visualmente atractivas y de apoyo.</p></div><div class="rating-group"><input type="radio" name="c5" value="0" id="c5-0"><label for="c5-0">N/C</label><input type="radio" name="c5" value="0.25" id="c5-1"><label for="c5-1">Mejorar</label><input type="radio" name="c5" value="0.5" id="c5-2"><label for="c5-2">Satisf.</label><input type="radio" name="c5" value="0.8" id="c5-3"><label for="c5-3">Bueno</label><input type="radio" name="c5" value="1.0" id="c5-4"><label for="c5-4">Excelente</label></div></div>
+                    <div class="criterion-card" data-points="10" id="crit-6"><div><h3>6. Fomento de la Interacción</h3><p>Promueve la participación, responde preguntas y genera diálogo.</p></div><div class="rating-group"><input type="radio" name="c6" value="0" id="c6-0"><label for="c6-0">N/C</label><input type="radio" name="c6" value="0.25" id="c6-1"><label for="c6-1">Mejorar</label><input type="radio" name="c6" value="0.5" id="c6-2"><label for="c6-2">Satisf.</label><input type="radio" name="c6" value="0.8" id="c6-3"><label for="c6-3">Bueno</label><input type="radio" name="c6" value="1.0" id="c6-4"><label for="c6-4">Excelente</label></div></div>
+                    <div class="criterion-card" data-points="10" id="crit-7"><div><h3>7. Estímulo del Pensamiento Crítico</h3><p>Reta a la audiencia a analizar, no solo a memorizar.</p></div><div class="rating-group"><input type="radio" name="c7" value="0" id="c7-0"><label for="c7-0">N/C</label><input type="radio" name="c7" value="0.25" id="c7-1"><label for="c7-1">Mejorar</label><input type="radio" name="c7" value="0.5" id="c7-2"><label for="c7-2">Satisf.</label><input type="radio" name="c7" value="0.8" id="c7-3"><label for="c7-3">Bueno</label><input type="radio" name="c7" value="1.0" id="c7-4"><label for="c7-4">Excelente</label></div></div>
+                    <div class="criterion-card" data-points="10" id="crit-8"><div><h3>8. Gestión del Tiempo y Síntesis Final</h3><p>Cumple el horario y cierra con un resumen claro.</p></div><div class="rating-group"><input type="radio" name="c8" value="0" id="c8-0"><label for="c8-0">N/C</label><input type="radio" name="c8" value="0.25" id="c8-1"><label for="c8-1">Mejorar</label><input type="radio" name="c8" value="0.5" id="c8-2"><label for="c8-2">Satisf.</label><input type="radio" name="c8" value="0.8" id="c8-3"><label for="c8-3">Bueno</label><input type="radio" name="c8" value="1.0" id="c8-4"><label for="c8-4">Excelente</label></div></div>
+                    <div class="criterion-card" data-points="10" id="crit-9"><div><h3>9. Profesionalismo y Modelo a Seguir</h3><p>Muestra compromiso, respeto y una actitud inspiradora.</p></div><div class="rating-group"><input type="radio" name="c9" value="0" id="c9-0"><label for="c9-0">N/C</label><input type="radio" name="c9" value="0.25" id="c9-1"><label for="c9-1">Mejorar</label><input type="radio" name="c9" value="0.5" id="c9-2"><label for="c9-2">Satisf.</label><input type="radio" name="c9" value="0.8" id="c9-3"><label for="c9-3">Bueno</label><input type="radio" name="c9" value="1.0" id="c9-4"><label for="c9-4">Excelente</label></div></div>
+                    <div class="criterion-card" data-points="5" id="crit-10"><div><h3>10. Integración (Ética y Seguridad)</h3><p>Menciona aspectos de seguridad del paciente, ética o trabajo en equipo.</p></div><div class="rating-group"><input type="radio" name="c10" value="0" id="c10-0"><label for="c10-0">N/C</label><input type="radio" name="c10" value="0.25" id="c10-1"><label for="c10-1">Mejorar</label><input type="radio" name="c10" value="0.5" id="c10-2"><label for="c10-2">Satisf.</label><input type="radio" name="c10" value="0.8" id="c10-3"><label for="c10-3">Bueno</label><input type="radio" name="c10" value="1.0" id="c10-4"><label for="c10-4">Excelente</label></div></div>
+                </div>
+                <div class="results-column">
+                    <div class="results-panel">
+                        <h2>Resultado Final</h2>
+                        <div class="score-display">
+                            <span class="score-label">Puntaje Total</span>
+                            <span id="score-total" class="score-value">0</span>
+                            <span class="score-max">/ 100</span>
+                        </div>
+                        <div class="feedback-section">
+                            <div><label for="fortalezas">Fortalezas Principales:</label><textarea id="fortalezas" rows="3"></textarea></div>
+                            <div><label for="mejoras">Áreas de Oportunidad:</label><textarea id="mejoras" rows="3"></textarea></div>
+                        </div>
+                        
+                        <div class="actions-section" id="action-buttons-container">
+                             <button id="generate-pdf-button" class="button">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:1.25rem; height:1.25rem; margin-right:0.5rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                                Generar PDF
+                            </button>
+                            <button id="submit-button" class="button">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                                Guardar en Drive
+                            </button>
+                        </div>
+                        <div id="status-message"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- URL DE GOOGLE APPS SCRIPT ---
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzWTUGArYhZ27GAYzFHVM7yp0uGjWGb1iJ_thL9quvI5RJcUEa0hPqiSQllZ5zS1LCN/exec';
+        const { jsPDF } = window.jspdf;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('input[type="radio"]').forEach(radio => radio.addEventListener('change', calculateScore));
+            document.getElementById('generate-pdf-button').addEventListener('click', generatePdf);
+            document.getElementById('submit-button').addEventListener('click', submitRubric);
+            document.getElementById('fecha').valueAsDate = new Date();
+            calculateScore();
+        });
+
+        function calculateScore() {
+            let totalScore = 0;
+            document.querySelectorAll('.criterion-card').forEach(card => {
+                const maxPoints = parseInt(card.getAttribute('data-points'));
+                const checkedRadio = card.querySelector('input[type="radio"]:checked');
+                if (checkedRadio) {
+                    totalScore += maxPoints * parseFloat(checkedRadio.value);
+                }
+            });
+            document.getElementById('score-total').textContent = Math.round(totalScore);
+        }
+        
+        function generatePdf() {
+            const pdfButton = document.getElementById('generate-pdf-button');
+            const originalButtonText = pdfButton.innerHTML;
+            pdfButton.disabled = true;
+            pdfButton.innerHTML = 'Generando...';
+
+            const elementToPrint = document.getElementById('pdf-content');
+            
+            // html2canvas aplicará automáticamente los estilos de @media print
+            html2canvas(elementToPrint, {
+                scale: 2, // Mejora la calidad de la imagen rasterizada
+                useCORS: true
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const ratio = canvasWidth / canvasHeight;
+                const imgHeight = pdfWidth / ratio;
+                
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdfHeight;
+
+                while (heightLeft > 0) {
+                    position = position - pdfHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+                }
+                
+                const tema = document.getElementById('tema').value || 'evaluacion';
+                const fecha = document.getElementById('fecha').value || new Date().toISOString().split('T')[0];
+                pdf.save(`Rubrica - ${tema.replace(/ /g, '_')} - ${fecha}.pdf`);
+
+            }).finally(() => {
+                // Restauramos el estado del botón
+                pdfButton.disabled = false;
+                pdfButton.innerHTML = originalButtonText;
+            });
+        }
+        
+        function submitRubric(event) {
+            event.preventDefault();
+            const submitButton = document.getElementById('submit-button');
+            const statusMessage = document.getElementById('status-message');
+
+            const individualScores = {};
+            for (let i = 1; i <= 10; i++) {
+                const card = document.getElementById(`crit-${i}`);
+                const maxPoints = parseInt(card.getAttribute('data-points'));
+                const checkedRadio = card.querySelector(`input[name="c${i}"]:checked`);
+                individualScores[`c${i}`] = checkedRadio ? Math.round(maxPoints * parseFloat(checkedRadio.value)) : 0;
+            }
+            
+            const rubricData = {
+                evaluador: document.getElementById('evaluador').value,
+                tema: document.getElementById('tema').value,
+                fecha: document.getElementById('fecha').value,
+                puntajeTotal: document.getElementById('score-total').textContent,
+                fortalezas: document.getElementById('fortalezas').value,
+                mejoras: document.getElementById('mejoras').value,
+                scores: individualScores
+            };
+            
+            if (!rubricData.evaluador || !rubricData.tema) {
+                alert('Por favor, completa los campos "Evaluador" y "Tema de la Clase".');
+                return;
+            }
+
+            const originalButtonContent = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = 'Enviando...';
+            statusMessage.className = 'info';
+            statusMessage.textContent = 'Guardando en la hoja de cálculo...';
+
+            fetch(WEB_APP_URL, {
+                method: 'POST', mode: 'cors', cache: 'no-cache',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rubricData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    statusMessage.className = 'success';
+                    statusMessage.innerHTML = `¡Éxito! Evaluación guardada. <a href="${data.pdfUrl}" target="_blank">Ver PDF en Drive</a>.`;
+                } else {
+                    throw new Error(data.message || 'Error desconocido del script.');
+                }
+            })
+            .catch(error => {
+                console.error('Error en fetch:', error);
+                statusMessage.className = 'error';
+                statusMessage.textContent = `Error al guardar: ${error.message}. Revisa la consola.`;
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonContent;
+            });
+        }
+    </script>
+</body>
+</html>
