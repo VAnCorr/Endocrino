@@ -319,24 +319,21 @@
             statusMessage.textContent = 'Guardando en la hoja de cálculo...';
 
             fetch(WEB_APP_URL, {
-                method: 'POST', mode: 'cors', cache: 'no-cache',
+                method: 'POST',
+                mode: 'no-cors', // <--- ¡ESTA ES LA LÍNEA MÁGICA!
+                cache: 'no-cache',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(rubricData)
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
+                .then(() => {
                     statusMessage.className = 'success';
-                    statusMessage.innerHTML = `¡Éxito! Evaluación guardada. <a href="${data.pdfUrl}" target="_blank">Ver PDF en Drive</a>.`;
-                } else {
-                    throw new Error(data.message || 'Error desconocido del script.');
-                }
-            })
-            .catch(error => {
-                console.error('Error en fetch:', error);
-                statusMessage.className = 'error';
-                statusMessage.textContent = `Error al guardar: ${error.message}. Revisa la consola.`;
-            })
+                    statusMessage.textContent = '¡Éxito! Evaluación enviada. Revisa la Google Sheet para confirmar.';
+                })
+                .catch(error => {
+                    console.error('Error de red al enviar:', error);
+                    statusMessage.className = 'error';
+                    statusMessage.textContent = `Error de red: ${error.message}. Por favor, inténtalo de nuevo.`;
+                })
             .finally(() => {
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalButtonContent;
