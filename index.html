@@ -318,27 +318,177 @@
             statusMessage.className = 'info';
             statusMessage.textContent = 'Guardando en la hoja de cálculo...';
 
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                mode: 'no-cors', // <--- ¡ESTA ES LA LÍNEA MÁGICA!
-                cache: 'no-cache',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(rubricData)
-            })
-                .then(() => {
-                    statusMessage.className = 'success';
-                    statusMessage.textContent = '¡Éxito! Evaluación enviada. Revisa la Google Sheet para confirmar.';
-                })
-                .catch(error => {
-                    console.error('Error de red al enviar:', error);
-                    statusMessage.className = 'error';
-                    statusMessage.textContent = `Error de red: ${error.message}. Por favor, inténtalo de nuevo.`;
-                })
-            .finally(() => {
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalButtonContent;
-            });
+            async function submitRubric(event) {
+    event.preventDefault();
+    const submitButton = document.getElementById('submit-button');
+    const statusMessage = document.getElementById('status-message');
+
+    if (!document.getElementById('evaluador').value || !document.getElementById('tema').value) {
+        alert('Por favor, completa los campos "Evaluador" y "Tema de la Clase".');
+        return;
+    }
+
+    const originalButtonContent = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = 'Generando PDF y enviando...';
+    statusMessage.className = 'info';
+    statusMessage.textContent = 'Este proceso puede tardar unos segundos...';
+
+    try {
+        // PASO 1: Generar el PDF como una imagen (canvas)
+        const elementToPrint = document.getElementById('pdf-content');
+        const actionButtons = document.getElementById('action-buttons-container');
+        actionButtons.style.display = 'none'; // Ocultar botones para la captura
+
+        const canvas = await html2canvas(elementToPrint, { scale: 1.5, useCORS: true });
+        
+        actionButtons.style.display = 'flex'; // Volver a mostrar botones
+
+        // PASO 2: Convertir la imagen a un texto largo (Base64)
+        // Usamos JPEG para que el archivo sea más pequeño y se envíe más rápido
+        const pdfDataString = canvas.toDataURL('image/jpeg', 0.9);
+
+        // PASO 3: Recopilar todos los demás datos del formulario
+        const individualScores = {};
+        for (let i = 1; i <= 10; i++) {
+            const card = document.getElementById(`crit-${i}`);
+            const maxPoints = parseInt(card.getAttribute('data-points'));
+            const checkedRadio = card.querySelector(`input[name="c${i}"]:checked`);
+            individualScores[`c${i}`] = checkedRadio ? Math.round(maxPoints * parseFloat(checkedRadio.value)) : 0;
         }
-    </script>
+        
+        const rubricData = {
+            pdfData: pdfDataString, // <--- AÑADIMOS EL PDF COMO TEXTO
+            evaluador: document.getElementById('evaluador').value,
+            tema: document.getElementById('tema').value,
+            fecha: document.getElementById('fecha').value,
+            puntajeTotal: document.getElementById('score-total').textContent,
+            fortalezas: document.getElementById('fortalezas').value,
+            mejoras: document.getElementById('mejoras').value,
+            scores: individualScores
+        };
+
+        // PASO 4: Enviar el paquete completo a Google
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'cors', // Necesitamos 'cors' para poder leer la respuesta del servidor
+            body: JSON.stringify(rubricData)
+            // No necesitamos 'headers' aquí porque el script de google no lo requiere
+        });
+
+        // PASO 5: Procesar la respuesta del servidor
+        if (!response.ok) {
+             const errorText = await response.text();
+             throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
+        }
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            statusMessage.className = 'success';
+            // Mostramos el link al PDF que nos devuelve el script
+            statusMessage.innerHTML = `¡Éxito! <a href="${result.pdfUrl}" target="_blank" style="font-weight:bold; text-decoration:underline;">Ver PDF en Drive</a>.`;
+        } else {
+            throw new Error(result.message || 'Error desconocido del script.');
+        }
+
+    } catch (error) {
+        console.error('Error en submitRubric:', error);
+        statusMessage.className = 'error';
+        statusMessage.textContent = `Error al guardar: ${error.message}.`;
+    } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonContent;
+    }
+}// ... aquí está el final de tu función generatePdf() ...
+        }).finally(() => {
+            // Restauramos el estado del botón
+            pdfButton.disabled = false;
+            pdfButton.innerHTML = originalButtonText;
+        });
+    }
+    
+    // --- ESTA ES LA ÚNICA FUNCIÓN QUE DEBES PEGAR ---
+    async function submitRubric(event) {
+        event.preventDefault();
+        const submitButton = document.getElementById('submit-button');
+        const statusMessage = document.getElementById('status-message');
+
+        if (!document.getElementById('evaluador').value || !document.getElementById('tema').value) {
+            alert('Por favor, completa los campos "Evaluador" y "Tema de la Clase".');
+            return;
+        }
+
+        const originalButtonContent = submitButton.innerHTML;
+        submitButton.disabled = true;
+        submitButton.innerHTML = 'Generando PDF y enviando...';
+        statusMessage.className = 'info';
+        statusMessage.textContent = 'Este proceso puede tardar unos segundos...';
+
+        try {
+            // PASO 1: Generar el PDF como una imagen (canvas)
+            const elementToPrint = document.getElementById('pdf-content');
+            const actionButtons = document.getElementById('action-buttons-container');
+            actionButtons.style.display = 'none'; // Ocultar botones para la captura
+
+            const canvas = await html2canvas(elementToPrint, { scale: 1.5, useCORS: true });
+            
+            actionButtons.style.display = 'flex'; // Volver a mostrar botones
+
+            // PASO 2: Convertir la imagen a un texto largo (Base64)
+            const pdfDataString = canvas.toDataURL('image/jpeg', 0.9);
+
+            // PASO 3: Recopilar todos los demás datos del formulario
+            const individualScores = {};
+            for (let i = 1; i <= 10; i++) {
+                const card = document.getElementById(`crit-${i}`);
+                const maxPoints = parseInt(card.getAttribute('data-points'));
+                const checkedRadio = card.querySelector(`input[name="c${i}"]:checked`);
+                individualScores[`c${i}`] = checkedRadio ? Math.round(maxPoints * parseFloat(checkedRadio.value)) : 0;
+            }
+            
+            const rubricData = {
+                pdfData: pdfDataString,
+                evaluador: document.getElementById('evaluador').value,
+                tema: document.getElementById('tema').value,
+                fecha: document.getElementById('fecha').value,
+                puntajeTotal: document.getElementById('score-total').textContent,
+                fortalezas: document.getElementById('fortalezas').value,
+                mejoras: document.getElementById('mejoras').value,
+                scores: individualScores
+            };
+
+            // PASO 4: Enviar el paquete completo a Google
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'cors',
+                body: JSON.stringify(rubricData)
+            });
+
+            // PASO 5: Procesar la respuesta del servidor
+            if (!response.ok) {
+                 const errorText = await response.text();
+                 throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                statusMessage.className = 'success';
+                statusMessage.innerHTML = `¡Éxito! <a href="${result.pdfUrl}" target="_blank" style="font-weight:bold; text-decoration:underline;">Ver PDF en Drive</a>.`;
+            } else {
+                throw new Error(result.message || 'Error desconocido del script.');
+            }
+
+        } catch (error) {
+            console.error('Error en submitRubric:', error);
+            statusMessage.className = 'error';
+            statusMessage.textContent = `Error al guardar: ${error.message}.`;
+        } finally {
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonContent;
+        }
+    }
+</script>
 </body>
 </html>
