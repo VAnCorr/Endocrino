@@ -65,6 +65,16 @@
         #status-message.info { color: var(--color-blue-600); }
         #status-message a { font-weight: bold; text-decoration: underline; }
 
+        /* --- NUEVO: MEJORAS PARA LA ADAPTABILIDAD EN MÓVILES --- */
+        @media (max-width: 420px) {
+        .rating-group {
+        gap: 0.25rem; /* Reduce el espacio entre botones (era 0.5rem) */
+        }
+        .rating-group label {
+        padding: 6px 4px; /* Reduce el relleno (era 8px) */
+        font-size: 0.8rem; /* Reduce ligeramente la fuente si es necesario */
+        }
+    }
         /* --- ESTILOS PARA IMPRESIÓN / PDF --- */
         @media print {
             body { padding: 0; background-color: white; color: black; font-size: 12pt; }
