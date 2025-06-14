@@ -65,91 +65,23 @@
         #status-message.info { color: var(--color-blue-600); }
         #status-message a { font-weight: bold; text-decoration: underline; }
 
-        /* --- NUEVO: ESTILOS PARA IMPRESIÓN / PDF --- */
+        /* --- ESTILOS PARA IMPRESIÓN / PDF --- */
         @media print {
-            body {
-                padding: 0;
-                background-color: white;
-                color: black;
-                font-size: 12pt; /* Tamaño de fuente base para impresión */
-            }
-
-            /* Define los márgenes de la página del PDF */
-            @page {
-                margin: 1.5cm;
-            }
-
-            /* Ocultar elementos no deseados en el PDF */
-            #action-buttons-container, #status-message {
-                display: none !important;
-            }
-
-            /* Asegurar que el contenido del PDF ocupe todo el ancho */
-            .container, .criteria-column, .results-column {
-                width: 100% !important;
-                max-width: 100% !important;
-            }
-            
-            /* Forzar layout de una columna y eliminar estilos de pantalla */
-            .main-content {
-                flex-direction: column !important;
-                gap: 1rem !important;
-            }
-            
-            .results-column {
-                position: static !important;
-                padding-top: 1rem;
-            }
-
-            /* Simplificar la apariencia de las tarjetas y cabecera */
-            header, .criterion-card, .results-panel {
-                box-shadow: none !important;
-                border-radius: 0 !important;
-                border: 1px solid #ccc;
-                padding: 1rem;
-            }
-            header {
-                border-left: none !important;
-            }
-
-            /* Evitar que una tarjeta se divida entre dos páginas */
-            .criterion-card, .results-panel {
-                break-inside: avoid;
-            }
-
-            /* Estilos de los inputs para impresión */
-            input, textarea {
-                border: 1px solid #ccc !important;
-                box-shadow: none !important;
-            }
-            textarea {
-                background-color: #f9f9f9;
-            }
-
-            /* Estilo simplificado para el grupo de calificación */
-            .rating-group label {
-                border-color: #ccc !important;
-                background-color: white !important;
-                color: #555 !important;
-                transform: none !important;
-                box-shadow: none !important;
-            }
-            .rating-group input:checked + label {
-                background-color: #333 !important;
-                color: white !important;
-                border-color: black !important;
-            }
-            
-            /* Estilo simplificado para el panel de puntuación */
-            .score-display {
-                background-color: #eee !important;
-                color: black !important;
-                border: 1px solid #ccc;
-                padding: 1rem !important;
-            }
-            .score-display .score-value {
-                font-size: 2.5rem !important;
-            }
+            body { padding: 0; background-color: white; color: black; font-size: 12pt; }
+            @page { margin: 1.5cm; }
+            #action-buttons-container, #status-message { display: none !important; }
+            .container, .criteria-column, .results-column { width: 100% !important; max-width: 100% !important; }
+            .main-content { flex-direction: column !important; gap: 1rem !important; }
+            .results-column { position: static !important; padding-top: 1rem; }
+            header, .criterion-card, .results-panel { box-shadow: none !important; border-radius: 0 !important; border: 1px solid #ccc; padding: 1rem; }
+            header { border-left: none !important; }
+            .criterion-card, .results-panel { break-inside: avoid; }
+            input, textarea { border: 1px solid #ccc !important; box-shadow: none !important; }
+            textarea { background-color: #f9f9f9; }
+            .rating-group label { border-color: #ccc !important; background-color: white !important; color: #555 !important; transform: none !important; box-shadow: none !important; }
+            .rating-group input:checked + label { background-color: #333 !important; color: white !important; border-color: black !important; }
+            .score-display { background-color: #eee !important; color: black !important; border: 1px solid #ccc; padding: 1rem !important; }
+            .score-display .score-value { font-size: 2.5rem !important; }
         }
     </style>
 </head>
@@ -159,7 +91,6 @@
     <div id="pdf-content">
         <div class="container">
             <header>
-                <!-- Contenido del header sin cambios -->
                  <h1>Rúbrica de Evaluación Profesional</h1>
                 <p>Módulo de Emergencias Endocrinas</p>
                 <div class="header-grid">
@@ -246,9 +177,8 @@
 
             const elementToPrint = document.getElementById('pdf-content');
             
-            // html2canvas aplicará automáticamente los estilos de @media print
             html2canvas(elementToPrint, {
-                scale: 2, // Mejora la calidad de la imagen rasterizada
+                scale: 2, 
                 useCORS: true
             }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
@@ -278,217 +208,91 @@
                 pdf.save(`Rubrica - ${tema.replace(/ /g, '_')} - ${fecha}.pdf`);
 
             }).finally(() => {
-                // Restauramos el estado del botón
                 pdfButton.disabled = false;
                 pdfButton.innerHTML = originalButtonText;
             });
         }
         
-        function submitRubric(event) {
+        async function submitRubric(event) {
             event.preventDefault();
             const submitButton = document.getElementById('submit-button');
             const statusMessage = document.getElementById('status-message');
 
-            const individualScores = {};
-            for (let i = 1; i <= 10; i++) {
-                const card = document.getElementById(`crit-${i}`);
-                const maxPoints = parseInt(card.getAttribute('data-points'));
-                const checkedRadio = card.querySelector(`input[name="c${i}"]:checked`);
-                individualScores[`c${i}`] = checkedRadio ? Math.round(maxPoints * parseFloat(checkedRadio.value)) : 0;
-            }
-            
-            const rubricData = {
-                evaluador: document.getElementById('evaluador').value,
-                tema: document.getElementById('tema').value,
-                fecha: document.getElementById('fecha').value,
-                puntajeTotal: document.getElementById('score-total').textContent,
-                fortalezas: document.getElementById('fortalezas').value,
-                mejoras: document.getElementById('mejoras').value,
-                scores: individualScores
-            };
-            
-            if (!rubricData.evaluador || !rubricData.tema) {
+            if (!document.getElementById('evaluador').value || !document.getElementById('tema').value) {
                 alert('Por favor, completa los campos "Evaluador" y "Tema de la Clase".');
                 return;
             }
 
             const originalButtonContent = submitButton.innerHTML;
             submitButton.disabled = true;
-            submitButton.innerHTML = 'Enviando...';
+            submitButton.innerHTML = 'Generando PDF y enviando...';
             statusMessage.className = 'info';
-            statusMessage.textContent = 'Guardando en la hoja de cálculo...';
+            statusMessage.textContent = 'Este proceso puede tardar unos segundos...';
 
-            async function submitRubric(event) {
-    event.preventDefault();
-    const submitButton = document.getElementById('submit-button');
-    const statusMessage = document.getElementById('status-message');
+            try {
+                // PASO 1: Generar el PDF como una imagen (canvas)
+                const elementToPrint = document.getElementById('pdf-content');
+                const actionButtons = document.getElementById('action-buttons-container');
+                actionButtons.style.display = 'none';
 
-    if (!document.getElementById('evaluador').value || !document.getElementById('tema').value) {
-        alert('Por favor, completa los campos "Evaluador" y "Tema de la Clase".');
-        return;
-    }
+                const canvas = await html2canvas(elementToPrint, { scale: 1.5, useCORS: true });
+                
+                actionButtons.style.display = 'flex';
 
-    const originalButtonContent = submitButton.innerHTML;
-    submitButton.disabled = true;
-    submitButton.innerHTML = 'Generando PDF y enviando...';
-    statusMessage.className = 'info';
-    statusMessage.textContent = 'Este proceso puede tardar unos segundos...';
+                // PASO 2: Convertir la imagen a un texto largo (Base64)
+                const pdfDataString = canvas.toDataURL('image/jpeg', 0.9);
 
-    try {
-        // PASO 1: Generar el PDF como una imagen (canvas)
-        const elementToPrint = document.getElementById('pdf-content');
-        const actionButtons = document.getElementById('action-buttons-container');
-        actionButtons.style.display = 'none'; // Ocultar botones para la captura
+                // PASO 3: Recopilar todos los demás datos del formulario
+                const individualScores = {};
+                for (let i = 1; i <= 10; i++) {
+                    const card = document.getElementById(`crit-${i}`);
+                    const maxPoints = parseInt(card.getAttribute('data-points'));
+                    const checkedRadio = card.querySelector(`input[name="c${i}"]:checked`);
+                    individualScores[`c${i}`] = checkedRadio ? Math.round(maxPoints * parseFloat(checkedRadio.value)) : 0;
+                }
+                
+                const rubricData = {
+                    pdfData: pdfDataString,
+                    evaluador: document.getElementById('evaluador').value,
+                    tema: document.getElementById('tema').value,
+                    fecha: document.getElementById('fecha').value,
+                    puntajeTotal: document.getElementById('score-total').textContent,
+                    fortalezas: document.getElementById('fortalezas').value,
+                    mejoras: document.getElementById('mejoras').value,
+                    scores: individualScores
+                };
 
-        const canvas = await html2canvas(elementToPrint, { scale: 1.5, useCORS: true });
-        
-        actionButtons.style.display = 'flex'; // Volver a mostrar botones
+                // PASO 4: Enviar el paquete completo a Google
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    body: JSON.stringify(rubricData)
+                });
 
-        // PASO 2: Convertir la imagen a un texto largo (Base64)
-        // Usamos JPEG para que el archivo sea más pequeño y se envíe más rápido
-        const pdfDataString = canvas.toDataURL('image/jpeg', 0.9);
+                // PASO 5: Procesar la respuesta del servidor
+                if (!response.ok) {
+                     const errorText = await response.text();
+                     throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
+                }
 
-        // PASO 3: Recopilar todos los demás datos del formulario
-        const individualScores = {};
-        for (let i = 1; i <= 10; i++) {
-            const card = document.getElementById(`crit-${i}`);
-            const maxPoints = parseInt(card.getAttribute('data-points'));
-            const checkedRadio = card.querySelector(`input[name="c${i}"]:checked`);
-            individualScores[`c${i}`] = checkedRadio ? Math.round(maxPoints * parseFloat(checkedRadio.value)) : 0;
-        }
-        
-        const rubricData = {
-            pdfData: pdfDataString, // <--- AÑADIMOS EL PDF COMO TEXTO
-            evaluador: document.getElementById('evaluador').value,
-            tema: document.getElementById('tema').value,
-            fecha: document.getElementById('fecha').value,
-            puntajeTotal: document.getElementById('score-total').textContent,
-            fortalezas: document.getElementById('fortalezas').value,
-            mejoras: document.getElementById('mejoras').value,
-            scores: individualScores
-        };
+                const result = await response.json();
 
-        // PASO 4: Enviar el paquete completo a Google
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors', // Necesitamos 'cors' para poder leer la respuesta del servidor
-            body: JSON.stringify(rubricData)
-            // No necesitamos 'headers' aquí porque el script de google no lo requiere
-        });
+                if (result.status === 'success') {
+                    statusMessage.className = 'success';
+                    statusMessage.innerHTML = `¡Éxito! <a href="${result.pdfUrl}" target="_blank" style="font-weight:bold; text-decoration:underline;">Ver PDF en Drive</a>.`;
+                } else {
+                    throw new Error(result.message || 'Error desconocido del script.');
+                }
 
-        // PASO 5: Procesar la respuesta del servidor
-        if (!response.ok) {
-             const errorText = await response.text();
-             throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
-        }
-
-        const result = await response.json();
-
-        if (result.status === 'success') {
-            statusMessage.className = 'success';
-            // Mostramos el link al PDF que nos devuelve el script
-            statusMessage.innerHTML = `¡Éxito! <a href="${result.pdfUrl}" target="_blank" style="font-weight:bold; text-decoration:underline;">Ver PDF en Drive</a>.`;
-        } else {
-            throw new Error(result.message || 'Error desconocido del script.');
-        }
-
-    } catch (error) {
-        console.error('Error en submitRubric:', error);
-        statusMessage.className = 'error';
-        statusMessage.textContent = `Error al guardar: ${error.message}.`;
-    } finally {
-        submitButton.disabled = false;
-        submitButton.innerHTML = originalButtonContent;
-    }
-}// ... aquí está el final de tu función generatePdf() ...
-        }).finally(() => {
-            // Restauramos el estado del botón
-            pdfButton.disabled = false;
-            pdfButton.innerHTML = originalButtonText;
-        });
-    }
-    
-    // --- ESTA ES LA ÚNICA FUNCIÓN QUE DEBES PEGAR ---
-    async function submitRubric(event) {
-        event.preventDefault();
-        const submitButton = document.getElementById('submit-button');
-        const statusMessage = document.getElementById('status-message');
-
-        if (!document.getElementById('evaluador').value || !document.getElementById('tema').value) {
-            alert('Por favor, completa los campos "Evaluador" y "Tema de la Clase".');
-            return;
-        }
-
-        const originalButtonContent = submitButton.innerHTML;
-        submitButton.disabled = true;
-        submitButton.innerHTML = 'Generando PDF y enviando...';
-        statusMessage.className = 'info';
-        statusMessage.textContent = 'Este proceso puede tardar unos segundos...';
-
-        try {
-            // PASO 1: Generar el PDF como una imagen (canvas)
-            const elementToPrint = document.getElementById('pdf-content');
-            const actionButtons = document.getElementById('action-buttons-container');
-            actionButtons.style.display = 'none'; // Ocultar botones para la captura
-
-            const canvas = await html2canvas(elementToPrint, { scale: 1.5, useCORS: true });
-            
-            actionButtons.style.display = 'flex'; // Volver a mostrar botones
-
-            // PASO 2: Convertir la imagen a un texto largo (Base64)
-            const pdfDataString = canvas.toDataURL('image/jpeg', 0.9);
-
-            // PASO 3: Recopilar todos los demás datos del formulario
-            const individualScores = {};
-            for (let i = 1; i <= 10; i++) {
-                const card = document.getElementById(`crit-${i}`);
-                const maxPoints = parseInt(card.getAttribute('data-points'));
-                const checkedRadio = card.querySelector(`input[name="c${i}"]:checked`);
-                individualScores[`c${i}`] = checkedRadio ? Math.round(maxPoints * parseFloat(checkedRadio.value)) : 0;
+            } catch (error) {
+                console.error('Error en submitRubric:', error);
+                statusMessage.className = 'error';
+                statusMessage.textContent = `Error al guardar: ${error.message}.`;
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonContent;
             }
-            
-            const rubricData = {
-                pdfData: pdfDataString,
-                evaluador: document.getElementById('evaluador').value,
-                tema: document.getElementById('tema').value,
-                fecha: document.getElementById('fecha').value,
-                puntajeTotal: document.getElementById('score-total').textContent,
-                fortalezas: document.getElementById('fortalezas').value,
-                mejoras: document.getElementById('mejoras').value,
-                scores: individualScores
-            };
-
-            // PASO 4: Enviar el paquete completo a Google
-            const response = await fetch(WEB_APP_URL, {
-                method: 'POST',
-                mode: 'cors',
-                body: JSON.stringify(rubricData)
-            });
-
-            // PASO 5: Procesar la respuesta del servidor
-            if (!response.ok) {
-                 const errorText = await response.text();
-                 throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
-            }
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                statusMessage.className = 'success';
-                statusMessage.innerHTML = `¡Éxito! <a href="${result.pdfUrl}" target="_blank" style="font-weight:bold; text-decoration:underline;">Ver PDF en Drive</a>.`;
-            } else {
-                throw new Error(result.message || 'Error desconocido del script.');
-            }
-
-        } catch (error) {
-            console.error('Error en submitRubric:', error);
-            statusMessage.className = 'error';
-            statusMessage.textContent = `Error al guardar: ${error.message}.`;
-        } finally {
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalButtonContent;
         }
-    }
-</script>
+    </script>
 </body>
 </html>
